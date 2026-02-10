@@ -46,10 +46,13 @@ const AlertManager = (function() {
      * @returns {boolean} - Whether alert was added (false if deduplicated)
      */
     function addAlert(alertData) {
-        // Check for duplicates
-        if (isDuplicate(alertData)) {
-            console.log('Alert deduplicated:', alertData.vehicleName);
-            return false;
+        // Skip deduplication for historical alerts
+        if (!alertData.isHistorical) {
+            // Check for duplicates
+            if (isDuplicate(alertData)) {
+                console.log('Alert deduplicated:', alertData.vehicleName);
+                return false;
+            }
         }
 
         const alert = {
@@ -61,14 +64,17 @@ const AlertManager = (function() {
             previousLevel: alertData.previousLevel,
             currentLevel: alertData.currentLevel,
             duration: alertData.duration,
-            timestamp: new Date().toISOString(),
-            location: alertData.location || 'Unknown'
+            timestamp: alertData.timestamp ? alertData.timestamp.toISOString() : new Date().toISOString(),
+            location: alertData.location || 'Unknown',
+            isHistorical: alertData.isHistorical || false
         };
 
         alerts.unshift(alert);
 
-        // Update deduplication cache
-        recentAlerts.set(alertData.vehicleId, Date.now());
+        // Update deduplication cache (only for real-time alerts)
+        if (!alertData.isHistorical) {
+            recentAlerts.set(alertData.vehicleId, Date.now());
+        }
 
         // Save to localStorage
         saveAlerts();
@@ -77,8 +83,10 @@ const AlertManager = (function() {
         renderAlert(alert);
         updateStats();
 
-        // Trigger notifications
-        triggerNotifications(alert);
+        // Trigger notifications only for real-time alerts
+        if (!alertData.isHistorical) {
+            triggerNotifications(alert);
+        }
 
         // Update vehicle filter options
         updateVehicleFilter();
@@ -116,12 +124,15 @@ const AlertManager = (function() {
         const icon = getAlertIcon(alert.severity);
         const formattedTime = formatTimestamp(alert.timestamp);
 
+        const historicalBadge = alert.isHistorical ? '<span class="alert-historical">Historical</span>' : '';
+
         alertCard.innerHTML = `
             <div class="alert-icon">${icon}</div>
             <div class="alert-content">
                 <div class="alert-header">
                     <span class="alert-vehicle">${escapeHtml(alert.vehicleName)}</span>
                     <span class="alert-severity ${alert.severity}">${alert.severity}</span>
+                    ${historicalBadge}
                 </div>
                 <div class="alert-details">
                     <span class="alert-detail">

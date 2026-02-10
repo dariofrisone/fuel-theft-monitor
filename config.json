@@ -1,0 +1,17 @@
+{
+  "name": "Fuel Theft Monitor",
+  "supportEmail": "support@example.com",
+  "version": "1.0.0",
+  "items": [
+    {
+      "url": "index.html",
+      "path": "ActivityLink",
+      "menuName": {
+        "en": "Fuel Theft Monitor"
+      },
+      "icon": "images/fuel-icon.svg"
+    }
+  ],
+  "isSigned": false,
+  "signature": ""
+}

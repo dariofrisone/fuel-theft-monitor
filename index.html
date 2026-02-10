@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuel Theft Monitor</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <h1>Fuel Theft Monitor</h1>
+                <span id="status-indicator" class="status-indicator status-inactive">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Initializing...</span>
+                </span>
+            </div>
+            <div class="header-right">
+                <button id="settings-btn" class="btn btn-secondary">Settings</button>
+                <button id="export-btn" class="btn btn-secondary">Export CSV</button>
+            </div>
+        </header>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="vehicle-filter">Filter by Vehicle:</label>
+                <select id="vehicle-filter">
+                    <option value="all">All Vehicles</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="severity-filter">Filter by Severity:</label>
+                <select id="severity-filter">
+                    <option value="all">All Severities</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                </select>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="total-alerts">0</span>
+                    <span class="stat-label">Total Alerts</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value critical" id="critical-count">0</span>
+                    <span class="stat-label">Critical</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value high" id="high-count">0</span>
+                    <span class="stat-label">High</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value medium" id="medium-count">0</span>
+                    <span class="stat-label">Medium</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="alerts-container">
+            <h2>Alert History</h2>
+            <div id="alerts-list" class="alerts-list">
+                <div class="empty-state">
+                    <p>No alerts detected. Monitoring is active and will display suspicious fuel drops here.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detection Settings</h2>
+                    <button id="close-settings" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="threshold-input">Fuel Drop Threshold (%)</label>
+                        <input type="number" id="threshold-input" min="1" max="50" value="10">
+                        <small>Minimum fuel drop percentage to trigger an alert</small>
+                    </div>
+                    <div class="setting-group">
+                        <label for="time-window-input">Time Window (minutes)</label>
+                        <input type="number" id="time-window-input" min="5" max="120" value="30">
+                        <small>Maximum time for a drop to be considered suspicious</small>
+                    </div>
+                    <div class="setting-group">
+                        <label for="poll-interval-input">Polling Interval (seconds)</label>
+                        <input type="number" id="poll-interval-input" min="10" max="300" value="30">
+                        <small>How often to check for new fuel data</small>
+                    </div>
+                    <div class="setting-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="sound-enabled" checked>
+                            Enable sound notifications
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="browser-notifications" checked>
+                            Enable browser notifications
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="save-settings" class="btn btn-primary">Save Settings</button>
+                    <button id="cancel-settings" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/alerts.js"></script>
+    <script src="js/fuel-monitor.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -428,6 +428,137 @@ const FuelMonitor = (function() {
         return [...vehicleCache.values()];
     }
 
+    /**
+     * Analyze historical fuel data for a date range
+     * @param {Date} fromDate - Start date
+     * @param {Date} toDate - End date
+     * @param {Function} progressCallback - Optional callback for progress updates
+     */
+    async function analyzeHistoricalData(fromDate, toDate, progressCallback) {
+        try {
+            // Ensure vehicles are loaded
+            if (vehicleCache.size === 0) {
+                await loadVehicles();
+            }
+
+            const vehicles = [...vehicleCache.values()];
+            let processed = 0;
+            let totalAlerts = 0;
+
+            if (progressCallback) {
+                progressCallback(`Analyzing ${vehicles.length} vehicles...`, 0);
+            }
+
+            // Process each vehicle
+            for (const vehicle of vehicles) {
+                try {
+                    const alerts = await analyzeVehicleHistory(vehicle, fromDate, toDate);
+                    totalAlerts += alerts;
+                    processed++;
+
+                    if (progressCallback) {
+                        const percent = Math.round((processed / vehicles.length) * 100);
+                        progressCallback(`Analyzed ${vehicle.name} (${processed}/${vehicles.length})`, percent);
+                    }
+                } catch (err) {
+                    console.error(`Error analyzing vehicle ${vehicle.name}:`, err);
+                }
+            }
+
+            if (progressCallback) {
+                progressCallback(`Analysis complete. Found ${totalAlerts} potential theft events.`, 100);
+            }
+
+            return totalAlerts;
+
+        } catch (error) {
+            console.error('Historical analysis failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Analyze historical fuel data for a single vehicle
+     * @param {Object} vehicle - Vehicle object
+     * @param {Date} fromDate - Start date
+     * @param {Date} toDate - End date
+     * @returns {number} Number of alerts found
+     */
+    async function analyzeVehicleHistory(vehicle, fromDate, toDate) {
+        let alertCount = 0;
+
+        try {
+            // Fetch fuel level data for the date range
+            const fuelData = await api.call('Get', {
+                typeName: 'StatusData',
+                search: {
+                    deviceSearch: { id: vehicle.id },
+                    diagnosticSearch: { id: DIAGNOSTIC_FUEL_LEVEL },
+                    fromDate: fromDate.toISOString(),
+                    toDate: toDate.toISOString()
+                }
+            });
+
+            if (!fuelData || fuelData.length < 2) {
+                return 0; // Not enough data
+            }
+
+            // Sort by timestamp
+            fuelData.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+            // Build history array
+            const history = [];
+
+            for (const point of fuelData) {
+                const currentPoint = {
+                    timestamp: new Date(point.dateTime),
+                    level: point.data * 100 // Convert to percentage
+                };
+
+                // Detect suspicious drops
+                const detection = detectSuspiciousDrop(history, currentPoint);
+
+                if (detection) {
+                    // Check vehicle state at that time
+                    const isStationary = await checkVehicleState(vehicle.id, currentPoint.timestamp);
+
+                    if (isStationary) {
+                        const severity = determineSeverity(detection.dropPercent, detection.durationMinutes);
+
+                        // Add alert (mark as historical)
+                        AlertManager.addAlert({
+                            vehicleId: vehicle.id,
+                            vehicleName: vehicle.name,
+                            severity: severity,
+                            fuelDrop: detection.dropPercent,
+                            previousLevel: detection.previousLevel,
+                            currentLevel: detection.currentLevel,
+                            duration: Math.round(detection.durationMinutes),
+                            timestamp: currentPoint.timestamp,
+                            isHistorical: true
+                        });
+
+                        alertCount++;
+                    }
+                }
+
+                // Add to history
+                history.push(currentPoint);
+
+                // Prune old entries (keep window + buffer)
+                while (history.length > 0 &&
+                       (currentPoint.timestamp - history[0].timestamp) > (config.timeWindowMinutes * 2 * 60 * 1000)) {
+                    history.shift();
+                }
+            }
+
+        } catch (error) {
+            console.error(`Error fetching fuel data for ${vehicle.name}:`, error);
+        }
+
+        return alertCount;
+    }
+
     // Public API
     return {
         init,
@@ -436,6 +567,7 @@ const FuelMonitor = (function() {
         updateConfig,
         getConfig,
         isActive,
-        getVehicles
+        getVehicles,
+        analyzeHistoricalData
     };
 })();

@@ -469,6 +469,8 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     padding: 20px;
     margin-top: 24px;
+    width: 100%;
+    max-width: 100%;
 }
 
 .legend-container h2 {
@@ -481,7 +483,7 @@ body {
 
 .legend-content {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 24px;
 }
 
@@ -489,6 +491,23 @@ body {
     padding: 16px;
     background-color: #f8f9fa;
     border-radius: 8px;
+}
+
+/* Make Detection Logic and Tips sections span full width */
+.legend-section:first-child,
+.legend-section:last-child {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+    .legend-content {
+        grid-template-columns: 1fr;
+    }
+
+    .legend-section:first-child,
+    .legend-section:last-child {
+        grid-column: auto;
+    }
 }
 
 .legend-section h3 {

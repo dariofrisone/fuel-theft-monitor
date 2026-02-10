@@ -130,6 +130,155 @@
                 closeSettings();
             }
         });
+
+        // Test alert button
+        const testAlertBtn = document.getElementById('test-alert-btn');
+        if (testAlertBtn) {
+            testAlertBtn.addEventListener('click', triggerTestAlert);
+        }
+
+        // Analyze history button
+        const analyzeHistoryBtn = document.getElementById('analyze-history-btn');
+        if (analyzeHistoryBtn) {
+            analyzeHistoryBtn.addEventListener('click', analyzeHistoricalData);
+        }
+
+        // Set default dates (last 7 days)
+        setDefaultDates();
+    }
+
+    /**
+     * Set default date range (last 7 days)
+     */
+    function setDefaultDates() {
+        const dateFrom = document.getElementById('date-from');
+        const dateTo = document.getElementById('date-to');
+
+        if (dateFrom && dateTo) {
+            const today = new Date();
+            const weekAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
+
+            dateTo.value = today.toISOString().split('T')[0];
+            dateFrom.value = weekAgo.toISOString().split('T')[0];
+        }
+    }
+
+    /**
+     * Analyze historical fuel data for selected date range
+     */
+    async function analyzeHistoricalData() {
+        const dateFromInput = document.getElementById('date-from');
+        const dateToInput = document.getElementById('date-to');
+        const analyzeBtn = document.getElementById('analyze-history-btn');
+
+        if (!dateFromInput.value || !dateToInput.value) {
+            alert('Please select both From and To dates');
+            return;
+        }
+
+        const fromDate = new Date(dateFromInput.value);
+        const toDate = new Date(dateToInput.value);
+        toDate.setHours(23, 59, 59, 999); // Include the entire end day
+
+        if (fromDate > toDate) {
+            alert('From date must be before To date');
+            return;
+        }
+
+        // Check date range (max 30 days to avoid too much data)
+        const daysDiff = (toDate - fromDate) / (1000 * 60 * 60 * 24);
+        if (daysDiff > 30) {
+            alert('Please select a date range of 30 days or less to avoid performance issues');
+            return;
+        }
+
+        // Clear existing alerts before analyzing
+        AlertManager.clearAlerts();
+
+        // Disable button and show progress
+        analyzeBtn.disabled = true;
+        const originalText = analyzeBtn.textContent;
+        analyzeBtn.textContent = 'Analyzing...';
+
+        // Update status
+        const indicator = document.getElementById('status-indicator');
+        if (indicator) {
+            indicator.className = 'status-indicator status-active';
+            indicator.querySelector('.status-text').textContent = 'Analyzing historical data...';
+        }
+
+        try {
+            const alertCount = await FuelMonitor.analyzeHistoricalData(fromDate, toDate, function(message, percent) {
+                analyzeBtn.textContent = `${percent}% - ${message.split('(')[0].trim()}`;
+            });
+
+            // Update status
+            if (indicator) {
+                indicator.querySelector('.status-text').textContent = `Found ${alertCount} potential theft events`;
+            }
+
+            if (alertCount === 0) {
+                alert('No suspicious fuel drops detected in the selected date range.');
+            }
+
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            alert('Failed to analyze historical data: ' + error.message);
+
+            if (indicator) {
+                indicator.className = 'status-indicator status-error';
+                indicator.querySelector('.status-text').textContent = 'Analysis failed';
+            }
+        } finally {
+            // Re-enable button
+            analyzeBtn.disabled = false;
+            analyzeBtn.textContent = originalText;
+        }
+    }
+
+    /**
+     * Trigger a test alert to verify the system works
+     */
+    function triggerTestAlert() {
+        const testVehicles = [
+            { name: 'Test Truck #101', id: 'test-101' },
+            { name: 'Test Van #202', id: 'test-202' },
+            { name: 'Test Car #303', id: 'test-303' }
+        ];
+        const severities = ['critical', 'high', 'medium'];
+
+        // Pick random vehicle and severity
+        const vehicle = testVehicles[Math.floor(Math.random() * testVehicles.length)];
+        const severity = severities[Math.floor(Math.random() * severities.length)];
+
+        // Generate realistic fuel drop values based on severity
+        let fuelDrop, duration;
+        if (severity === 'critical') {
+            fuelDrop = 25 + Math.random() * 15; // 25-40%
+            duration = Math.floor(3 + Math.random() * 7); // 3-10 min
+        } else if (severity === 'high') {
+            fuelDrop = 15 + Math.random() * 10; // 15-25%
+            duration = Math.floor(10 + Math.random() * 10); // 10-20 min
+        } else {
+            fuelDrop = 10 + Math.random() * 5; // 10-15%
+            duration = Math.floor(20 + Math.random() * 10); // 20-30 min
+        }
+
+        const previousLevel = 60 + Math.random() * 30; // 60-90%
+        const currentLevel = previousLevel - fuelDrop;
+
+        AlertManager.addAlert({
+            vehicleId: vehicle.id,
+            vehicleName: vehicle.name,
+            severity: severity,
+            fuelDrop: fuelDrop,
+            previousLevel: previousLevel,
+            currentLevel: currentLevel,
+            duration: Math.round(duration),
+            location: 'Test Location'
+        });
+
+        console.log('Test alert triggered:', vehicle.name, severity);
     }
 
     /**

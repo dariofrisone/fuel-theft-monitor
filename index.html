@@ -17,6 +17,7 @@
                 </span>
             </div>
             <div class="header-right">
+                <button id="test-alert-btn" class="btn btn-primary">Test Alert</button>
                 <button id="settings-btn" class="btn btn-secondary">Settings</button>
                 <button id="export-btn" class="btn btn-secondary">Export CSV</button>
             </div>
@@ -63,6 +64,66 @@
             <div id="alerts-list" class="alerts-list">
                 <div class="empty-state">
                     <p>No alerts detected. Monitoring is active and will display suspicious fuel drops here.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend / How It Works -->
+        <div class="legend-container">
+            <h2>How It Works</h2>
+            <div class="legend-content">
+                <div class="legend-section">
+                    <h3>Detection Logic</h3>
+                    <p>The system monitors fuel levels from your vehicles' sensors and triggers an alert when <strong>all</strong> of these conditions are met:</p>
+                    <ul>
+                        <li><strong>Fuel drops significantly</strong> - More than the threshold (default 10%)</li>
+                        <li><strong>Drop happens quickly</strong> - Within the time window (default 30 minutes)</li>
+                        <li><strong>Vehicle is parked</strong> - Engine/ignition is OFF</li>
+                        <li><strong>Vehicle is stationary</strong> - Speed is 0, no active trip</li>
+                    </ul>
+                    <p class="legend-note">Normal fuel consumption while driving does NOT trigger alerts.</p>
+                </div>
+
+                <div class="legend-section">
+                    <h3>Severity Levels</h3>
+                    <div class="severity-table">
+                        <div class="severity-row critical">
+                            <span class="severity-badge">CRITICAL</span>
+                            <span class="severity-desc">More than 25% fuel drop in less than 10 minutes</span>
+                        </div>
+                        <div class="severity-row high">
+                            <span class="severity-badge">HIGH</span>
+                            <span class="severity-desc">More than 15% fuel drop in less than 20 minutes</span>
+                        </div>
+                        <div class="severity-row medium">
+                            <span class="severity-badge">MEDIUM</span>
+                            <span class="severity-desc">More than 10% fuel drop in less than 30 minutes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="legend-section">
+                    <h3>Example Calculation</h3>
+                    <div class="example-box">
+                        <p><strong>Scenario:</strong> A truck is parked overnight. At 2:00 AM the fuel level is 75%. At 2:15 AM it drops to 50%.</p>
+                        <p><strong>Calculation:</strong></p>
+                        <ul>
+                            <li>Fuel drop: 75% - 50% = <strong>25%</strong></li>
+                            <li>Time elapsed: <strong>15 minutes</strong></li>
+                            <li>Vehicle state: Parked, ignition OFF</li>
+                        </ul>
+                        <p><strong>Result:</strong> CRITICAL alert triggered (25% drop in 15 min while stationary)</p>
+                    </div>
+                </div>
+
+                <div class="legend-section">
+                    <h3>Tips</h3>
+                    <ul>
+                        <li>Adjust the threshold in <strong>Settings</strong> if you get too many false alerts</li>
+                        <li>Fuel sensor accuracy varies - small fluctuations (1-3%) are normal</li>
+                        <li>Alerts are deduplicated - you won't get spam for the same vehicle</li>
+                        <li>Use <strong>Export CSV</strong> to download alert history for reporting</li>
+                    </ul>
                 </div>
             </div>
         </div>
